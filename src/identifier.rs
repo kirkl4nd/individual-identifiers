@@ -1,9 +1,9 @@
 use core::fmt;
-use lazy_static::lazy_static;
+
 use rand::seq::SliceRandom;
 use reqwest::blocking::Client;
 use serde_json::Value;
-use std::sync::Mutex;
+
 use uuid::Uuid;
 
 const ERROR_FETCHING_WORD: &str = "Error fetching word.";
