@@ -1,7 +1,6 @@
-use identifier::Identifier;
-
 mod identifier;
 
+use identifier::Identifier;
 
 fn main() {
     let identifier = Identifier::new().set();

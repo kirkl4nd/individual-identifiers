@@ -10,6 +10,13 @@ const ERROR_FETCHING_WORD: &str = "Error fetching word.";
 const ERROR_PARSING_API: &str = "Error parsing API response.";
 const ERROR_API_REQUEST: &str = "Error making API request.";
 
+/// Filters the given words based on the specified letter and tag.
+///
+/// # Arguments
+///
+/// * `words` - A slice of word data from the API.
+/// * `letter` - The letter that the word must start with.
+/// * `tag` - The tag that the word must have.
 fn filter_words(words: &[Value], letter: &char, tag: &str) -> Vec<String> {
     words
         .iter()
@@ -25,20 +32,26 @@ fn filter_words(words: &[Value], letter: &char, tag: &str) -> Vec<String> {
         .collect()
 }
 
-#[derive(Clone)]
+/// An identifier that can be in one of three states: Default, Success, or Failure.
+#[derive(Clone, PartialEq)]
 pub enum Identifier {
+    /// The default state when the identifier is first created.
     Default { uuid: Uuid },
+    /// The success state when a name has been successfully generated for the identifier.
     Success { uuid: Uuid, name: String },
+    /// The failure state when an error occurs while generating a name for the identifier.
     Failure { uuid: Uuid, error: String },
 }
 
 impl Identifier {
+    /// Creates a new Identifier in the default state.
     pub fn new() -> Self {
         Self::Default {
             uuid: Uuid::new_v4(),
         }
     }
 
+    /// Tries to set a name for the Identifier, transitioning it from the default state into either the success state or the failure state.
     pub fn set(&mut self) -> Self {
         match self {
             Identifier::Success { .. } => self.clone(),
@@ -94,6 +107,7 @@ impl Identifier {
 }
 
 impl fmt::Display for Identifier {
+    /// Formats the Identifier for display.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Identifier::Default { uuid } => {
@@ -125,6 +139,7 @@ mod tests {
     use std::time::{Duration, Instant};
 
     #[test]
+    /// Tests the creation and name-setting of an Identifier.
     fn test_create() {
         // Construct identifier
         let mut identifier = Identifier::new();
@@ -142,6 +157,7 @@ mod tests {
     }
 
     #[test]
+    /// Tests the uniqueness of the generated names by creating a large number of Identifiers and checking for repeated words and combinations.
     fn test_uniqueness() {
         let num_threads = 2 * num_cpus::get(); // double the number of logical cores
         let pool = rayon::ThreadPoolBuilder::new()

@@ -2,6 +2,12 @@
 name = "individual-identifiers"
 version = "0.1.0"
 edition = "2021"
+authors = ["kirkl4nd"]
+description = "A library for creating unique, human-readable alliterative identifiers."
+
+[lib]
+name = "individual_identifiers"
+path = "src/lib.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
