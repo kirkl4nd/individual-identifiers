@@ -25,6 +25,7 @@ fn filter_words(words: &[Value], letter: &char, tag: &str) -> Vec<String> {
         .collect()
 }
 
+#[derive(Clone)]
 pub enum Identifier {
     Default { uuid: Uuid },
     Success { uuid: Uuid, name: String },
@@ -38,9 +39,9 @@ impl Identifier {
         }
     }
 
-    pub fn set(&mut self) {
+    pub fn set(&mut self) -> Self {
         match self {
-            Identifier::Success { .. } => {}
+            Identifier::Success { .. } => self.clone(),
             Identifier::Default { uuid } | Identifier::Failure { uuid, .. } => {
                 let letter = (rand::random::<u8>() % 26 + b'a') as char;
                 let url = format!(
@@ -85,6 +86,8 @@ impl Identifier {
                         };
                     }
                 }
+
+                return self.clone();
             }
         }
     }
@@ -98,7 +101,7 @@ impl fmt::Display for Identifier {
             }
 
             Identifier::Success { uuid, name } => {
-                write!(f, "{}\t({})", uuid, name)
+                write!(f, "{}\t({})", name, uuid)
             }
 
             Identifier::Failure { uuid, error } => {
