@@ -10,10 +10,6 @@ const ERROR_FETCHING_WORD: &str = "Error fetching word.";
 const ERROR_PARSING_API: &str = "Error parsing API response.";
 const ERROR_API_REQUEST: &str = "Error making API request.";
 
-lazy_static! {
-    static ref CLIENT: Mutex<Client> = Mutex::new(Client::new());
-}
-
 fn filter_words(words: &[Value], letter: &char, tag: &str) -> Vec<String> {
     words
         .iter()
@@ -47,8 +43,11 @@ impl Identifier {
             Identifier::Success { .. } => {}
             Identifier::Default { uuid } | Identifier::Failure { uuid, .. } => {
                 let letter = (rand::random::<u8>() % 26 + b'a') as char;
-                let url = format!("https://api.datamuse.com/words?sp={0}*&&md=p", letter);
-                let client = CLIENT.lock().unwrap();
+                let url = format!(
+                    "https://api.datamuse.com/words?sp={0}*&&md=p&max=1000",
+                    letter
+                );
+                let client = Client::new();
                 let response = client.get(&url).send();
 
                 match response {
@@ -114,18 +113,41 @@ mod tests {
     use super::*;
     use crossbeam::channel;
     use std::collections::HashMap;
-    use std::io::{Write, stdout};
-    use std::sync::{Arc, atomic::{AtomicUsize, AtomicBool, Ordering}};
+    use std::io::{stdout, Write};
+    use std::sync::{
+        atomic::{AtomicBool, AtomicUsize, Ordering},
+        Arc,
+    };
     use std::thread;
-    use std::time::{Instant, Duration};
+    use std::time::{Duration, Instant};
+
+    #[test]
+    fn test_create() {
+        // Construct identifier
+        let mut identifier = Identifier::new();
+        match identifier {
+            Identifier::Default { uuid: _ } => {}
+            _ => panic!("Expected Default variant."),
+        }
+
+        // Set unique name
+        identifier.set();
+        match identifier {
+            Identifier::Success { uuid: _, name: _ } => {}
+            _ => panic!("Expected Success variant."),
+        }
+    }
 
     #[test]
     fn test_uniqueness() {
-        let num_cpus = num_cpus::get(); // get the number of logical cores
-        let pool = rayon::ThreadPoolBuilder::new().num_threads(num_cpus).build().unwrap(); // create a ThreadPool with that many threads
+        let num_threads = 2 * num_cpus::get(); // double the number of logical cores
+        let pool = rayon::ThreadPoolBuilder::new()
+            .num_threads(num_threads)
+            .build()
+            .unwrap();
 
         let (tx, rx) = channel::unbounded();
-        let total = 10000;
+        let total = 1000;
         let start = Arc::new(Instant::now());
         let counter = Arc::new(AtomicUsize::new(0));
         let stop = Arc::new(AtomicBool::new(false));
@@ -133,36 +155,34 @@ mod tests {
         let counter_clone = Arc::clone(&counter);
         let start_clone = Arc::clone(&start);
         let stop_clone = Arc::clone(&stop);
-        thread::spawn(move || {
-            loop {
-                thread::sleep(Duration::from_secs(1));
-                let elapsed = start_clone.elapsed();
-                let count = counter_clone.load(Ordering::SeqCst);
-                print!("\rElapsed time: {:0>2}:{:0>2}, Identifiers created: {}/{}",
-                    elapsed.as_secs() / 60, 
-                    elapsed.as_secs() % 60, 
-                    count, 
-                    total
-                );
-                stdout().flush().unwrap();
-                if count >= total {
-                    stop_clone.store(true, Ordering::SeqCst);
-                    break;
-                } else if elapsed >= Duration::from_secs(60 * 60) {
-                    panic!("Test took too long.");
-                }
+        thread::spawn(move || loop {
+            thread::sleep(Duration::from_secs(1));
+            let elapsed = start_clone.elapsed();
+            let count = counter_clone.load(Ordering::SeqCst);
+            print!(
+                "\rElapsed time: {:0>2}:{:0>2}, Identifiers created: {}/{}",
+                elapsed.as_secs() / 60,
+                elapsed.as_secs() % 60,
+                count,
+                total
+            );
+            stdout().flush().unwrap();
+            if count >= total {
+                stop_clone.store(true, Ordering::SeqCst);
+                break;
+            } else if elapsed >= Duration::from_secs(60 * 60) {
+                panic!("Test took too long.");
             }
         });
 
         let stop_clone = Arc::clone(&stop);
-        // using the thread pool to generate identifiers in parallel
         pool.scope(|s| {
             for _ in 0..total {
                 if stop_clone.load(Ordering::SeqCst) {
                     return;
                 }
                 let tx_clone = tx.clone();
-                let counter_clone = Arc::clone(&counter);  // clone the counter before moving it into the closure
+                let counter_clone = Arc::clone(&counter);
                 s.spawn(move |_| {
                     let mut identifier = Identifier::new();
                     identifier.set();
@@ -171,8 +191,8 @@ mod tests {
                 });
             }
         });
-        
-        drop(tx);  // close the channel
+
+        drop(tx); // close the channel
 
         let mut word_counts: HashMap<String, usize> = HashMap::new();
         let mut pair_counts: HashMap<String, usize> = HashMap::new();
@@ -188,15 +208,23 @@ mod tests {
             }
         }
 
-        println!("\n\nRepeated words:");
-        for (word, count) in word_counts.iter().filter(|(_, count)| **count > 1) {
-            println!("{}: {}", word, count);
-        }
+        println!("\nUniqueness results:");
+        println!(
+            "\tRepeated words:\t\t{}",
+            word_counts.iter().filter(|(_, count)| **count > 1).count()
+        );
+        println!(
+            "\tRepeated combinations:\t{}",
+            pair_counts.iter().filter(|(_, count)| **count > 1).count()
+        );
 
-        println!("\n\nRepeated pairs:");
-        for (pair, count) in pair_counts.iter().filter(|(_, count)| **count > 1) {
-            println!("{}: {}", pair, count);
+        let mut word_counts_vec: Vec<(&String, &usize)> = word_counts.iter().collect();
+        word_counts_vec.sort_by(|a, b| b.1.cmp(a.1)); // sort in descending order
+
+        println!("\n\tTop words:");
+        for (word, count) in word_counts_vec.iter().take(3) {
+            // take the top 3
+            println!("\t\t{}\t\t{}", word, count);
         }
     }
 }
-
