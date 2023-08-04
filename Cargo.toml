@@ -1,5 +1,5 @@
 [package]
-name = "webserver"
+name = "individual-identifiers"
 version = "0.1.0"
 edition = "2021"
 
@@ -7,8 +7,12 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4.3.1"
+crossbeam = "0.8.2"
+crossbeam-channel = "0.5.8"
 lazy_static = "1.4.0"
+num_cpus = "1.16.0"
 rand = "0.8.5"
+rayon = "1.7.0"
 reqwest = { version = "0.11.18", features = ["blocking", "json"] }
 serde = { version = "1.0.180", features = ["derive"] }
 serde_json = "1.0.104"
