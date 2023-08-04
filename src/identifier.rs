@@ -104,6 +104,12 @@ impl Identifier {
             }
         }
     }
+
+    /// Returns Uuid value from Identifier for external use.
+    fn uuid(&self) -> Uuid {
+        self.uuid().clone()
+    }
+
 }
 
 impl fmt::Display for Identifier {
