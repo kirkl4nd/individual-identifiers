@@ -1,6 +1,6 @@
 use core::fmt;
 
-use rand::{Rng, seq::SliceRandom, thread_rng};
+use rand::seq::SliceRandom;
 use reqwest::blocking::Client;
 use serde_json::Value;
 use uuid::Uuid;
@@ -40,8 +40,11 @@ impl Identifier {
                                 .filter_map(|word| {
                                     let w = word["word"].as_str()?;
                                     let tags = word["tags"].as_array()?;
-                                    (w.len() >= 4 && w.len() <= 8 && w.starts_with(letter) && tags.contains(&Value::String("adj".to_string())))
-                                        .then(|| w.to_owned())
+                                    (w.len() >= 4
+                                        && w.len() <= 8
+                                        && w.starts_with(letter)
+                                        && tags.contains(&Value::String("adj".to_string())))
+                                    .then(|| w.to_owned())
                                 })
                                 .collect();
 
@@ -50,8 +53,11 @@ impl Identifier {
                                 .filter_map(|word| {
                                     let w = word["word"].as_str()?;
                                     let tags = word["tags"].as_array()?;
-                                    (w.len() >= 4 && w.len() <= 8 && w.starts_with(letter) && tags.contains(&Value::String("n".to_string())))
-                                        .then(|| w.to_owned())
+                                    (w.len() >= 4
+                                        && w.len() <= 8
+                                        && w.starts_with(letter)
+                                        && tags.contains(&Value::String("n".to_string())))
+                                    .then(|| w.to_owned())
                                 })
                                 .collect();
 
@@ -87,9 +93,6 @@ impl Identifier {
             }
         }
     }
-
-    
-    
 }
 
 impl fmt::Display for Identifier {
