@@ -1,5 +1,10 @@
 mod identifier;
+use identifier::Identifier;
 
 fn main() {
-    todo!()
+    let mut identifier = Identifier::new();
+    println!("{}", identifier);
+
+    identifier.set();
+    println!("{}", identifier);
 }

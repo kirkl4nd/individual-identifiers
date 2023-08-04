@@ -18,24 +18,6 @@ impl Identifier {
         }
     }
 
-    /**
-     * If self is Self::Success, return.
-     * If self is Self::Default or Self::Error, do the following:
-     *
-     * Pick a random letter (a-z)
-     *
-     * Use an API to pick two words:
-     *  - An adjective starting with the selected letter (<= 7 letters)
-     *  - A noun starting with the selected letter (<= 7 letters)
-     *
-     * Creat a string containing the two words.
-     * They should be in sentence case with the first letter of the first word capitalized.
-     *
-     * Return Self::Success { ... } with the original UUID and the newly created string.
-     *
-     * If any errors are encountered during the process,
-     * immediately return Self::Error { ... } with the original UUID and a String of the error message.
-     */
     pub fn set(&mut self) {
         match self {
             Identifier::Success { .. } => {}
